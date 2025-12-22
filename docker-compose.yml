@@ -1,0 +1,28 @@
+services:
+  rest-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rest-api
+    restart: always
+    ports:
+      - '8080:8080'
+    depends_on:
+      - database
+    env_file:
+      - .env
+
+  database:
+    image: postgres:15
+    container_name: database
+    restart: always
+    ports:
+      - '5433:5432'
+    env_file:
+      - .env
+    volumes:
+      - database:/var/lib/postgresql/data
+
+volumes:
+  database:
+    name: database

@@ -1,0 +1,10 @@
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@scarf/scarf'
+  - bcrypt
+  - prisma
+
+overrides:
+  tmp@<=0.2.3: '>=0.2.4'

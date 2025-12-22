@@ -1,0 +1,15 @@
+prometheus:
+  alertmanager:
+    enabled: false
+  pushgateway:
+    enabled: false
+  nodeExporter:
+    enabled: false
+
+grafana:
+  adminUser: admin
+  adminPassword: admin
+  service:
+    type: NodePort
+  # ingress:
+  #   enabled: true

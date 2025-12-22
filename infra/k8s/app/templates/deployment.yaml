@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: libuku-rest-api
+  name: libuku-rest-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: libuku-rest-api
+  template:
+    metadata:
+      labels:
+        app: libuku-rest-api
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/path: /api/metrics
+        prometheus.io/port: '8080'
+    spec:
+      containers:
+        - image: eugenionhampossa/libuku-rest-api
+          name: libuku-rest-api
+          ports:
+            - containerPort: 8080

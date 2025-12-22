@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+enum Role {
+  USER
+  ADMIN
+}
+
+
+enum LogAction {
+  USER_CREATED
+  USER_LOGIN
+  USER_UPDATED
+}
+
+enum Provider {
+  LOCAL
+  GOOGLE
+}
+
+// -----------------------------------------------------------------------------
+// 1. AUTHENTICATION AND USER MANAGEMENT (RF01-RF06)
+// -----------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique // RF06: Ensures email uniqueness
+  provider      Provider // RF03: Authentication provider (e.g., "google")
+  password      String? // Optional for OAuth logins (Google)
+  refreshToken  String?   @db.Text
+  emailVerified DateTime? // RF02: Stores email verification date
+  isActive      Boolean   @default(true) // RF04: Active/inactive account
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  deletedAt     DateTime?
+  updatedAt     DateTime  @updatedAt
+  activityLogs         ActivityLog[]
+
+  @@index([email])
+  @@map("users")
+}
+
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expiresAt  DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, token])
+  @@map("password_reset_tokens")
+}
+
+model ActivityLog {
+  id        String    @id @default(cuid())
+  action    LogAction
+  metadata  Json?
+  createdAt DateTime  @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("activity_logs")
+}
