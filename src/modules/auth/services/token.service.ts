@@ -12,8 +12,10 @@ export class TokenService {
     private configService: ConfigService,
   ) {}
 
-  private generateToken(payload: JwtPayload, expiresIn: string): string {
-    const token = this.jwtService.sign(payload, { expiresIn });
+  private generateToken(payload: JwtPayload, expiresIn): string {
+    const token = this.jwtService.sign<JwtPayload>(payload, {
+      expiresIn,
+    });
     return token;
   }
 

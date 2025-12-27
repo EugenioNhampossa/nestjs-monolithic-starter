@@ -14,8 +14,11 @@ import { JwtAuthGuard, RolesGuard } from './modules/auth/guards';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { AppController } from './app.controller';
 import { UserModule } from './modules/auth/user/user.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { AppController } from './app.controller';
+
 @Module({
   imports: [
     PrometheusModule.register(),
@@ -43,6 +46,10 @@ import { UserModule } from './modules/auth/user/user.module';
       name: 'PrismaService',
       isGlobal: true,
       useClass: ExtendedPrismaConfigService,
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'client'),
+      exclude: ['/api{/*path}'],
     }),
     ResilienceModule.forRoot({}),
     UserModule,

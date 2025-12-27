@@ -7,11 +7,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import {
-  PrismaClientKnownRequestError,
-  PrismaClientValidationError,
-} from '@prisma/client/runtime/library';
 import { IErrorResponse } from '../interfaces';
+import { PrismaClientKnownRequestError, PrismaClientValidationError } from '@prisma/client/runtime/client';
 
 const DEFAULT_ERROR_MESSAGE =
   'An unexpected server error occurred. Please try again later.';

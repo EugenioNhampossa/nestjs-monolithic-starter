@@ -1,18 +1,17 @@
 generator client {
   provider = "prisma-client-js"
+  engineType   = "library"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
-
 
 enum Role {
   USER
   ADMIN
 }
-
 
 enum LogAction {
   USER_CREATED
@@ -30,24 +29,23 @@ enum Provider {
 // -----------------------------------------------------------------------------
 
 model User {
-  id            String    @id @default(cuid())
+  id            String        @id @default(cuid())
   name          String
-  email         String    @unique // RF06: Ensures email uniqueness
-  provider      Provider // RF03: Authentication provider (e.g., "google")
-  password      String? // Optional for OAuth logins (Google)
-  refreshToken  String?   @db.Text
-  emailVerified DateTime? // RF02: Stores email verification date
-  isActive      Boolean   @default(true) // RF04: Active/inactive account
-  role          Role      @default(USER)
-  createdAt     DateTime  @default(now())
+  email         String        @unique
+  provider      Provider
+  password      String?
+  refreshToken  String?       @db.Text
+  emailVerified DateTime?
+  isActive      Boolean       @default(true)
+  role          Role          @default(USER)
+  createdAt     DateTime      @default(now())
   deletedAt     DateTime?
-  updatedAt     DateTime  @updatedAt
-  activityLogs         ActivityLog[]
+  updatedAt     DateTime      @updatedAt
+  activityLogs  ActivityLog[]
 
   @@index([email])
   @@map("users")
 }
-
 
 model VerificationToken {
   identifier String

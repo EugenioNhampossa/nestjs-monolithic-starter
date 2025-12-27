@@ -1,8 +1,9 @@
 import { Logger } from '@nestjs/common';
-import { $Enums, PrismaClient } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 import { HashHelper } from '../helpers/hash.helper';
+import { extendedPrismaClient } from './prisma.extension';
 
-const prisma = new PrismaClient();
+const prisma = extendedPrismaClient;
 const logger = new Logger('SEED_METHOD');
 
 const createAdminUser = async () => {

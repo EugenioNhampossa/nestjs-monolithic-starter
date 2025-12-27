@@ -7,7 +7,7 @@ export class AppController {
   @Public()
   home() {
     return {
-      app: 'Libuku-rest-api',
+      app: 'rest-api',
       status: 'OK',
       message: 'Service is fully operational',
       timestamp: new Date().toISOString(),
