@@ -32,6 +32,9 @@ const EnvVariables = {
   },
   client: {
     web: 'WEB_CLIENT',
+    webClientGoogleAuthCallBack: 'WEB_CLIENT_GOOGLEAUTH_CALLBACK',
+    webClientEmailVerificationUrl: 'WEB_CLIENT_EMAIL_VERIFICATION_URL',
+    webClientResetPasswordUrl: 'WEB_CLIENT_RESET_PASSWORD_URL',
   },
   smtp: {
     host: 'SMTP_HOST',
@@ -39,6 +42,7 @@ const EnvVariables = {
     user: 'SMTP_USER',
     password: 'SMTP_PASSWORD',
   },
+  env: 'NODE_ENV',
 };
 
 const ValidationSchema: Joi.ObjectSchema<typeof process.env> = Joi.object({
@@ -54,8 +58,8 @@ const ValidationSchema: Joi.ObjectSchema<typeof process.env> = Joi.object({
   [EnvVariables.database.port]: Joi.number().required(),
 
   [EnvVariables.jwt.secret]: Joi.string().required(),
-  [EnvVariables.jwt.accessExpiresIn]: Joi.string().required(),
-  [EnvVariables.jwt.refreshExpiresIn]: Joi.string().required(),
+  [EnvVariables.jwt.accessExpiresIn]: Joi.number().required(),
+  [EnvVariables.jwt.refreshExpiresIn]: Joi.number().required(),
   [EnvVariables.jwt.refreshSecret]: Joi.string().required(),
   [EnvVariables.jwt.tokenType]: Joi.string().required(),
 
@@ -67,11 +71,16 @@ const ValidationSchema: Joi.ObjectSchema<typeof process.env> = Joi.object({
   [EnvVariables.google.callbackUrl]: Joi.string().required(),
 
   [EnvVariables.client.web]: Joi.string().required(),
+  [EnvVariables.client.webClientEmailVerificationUrl]: Joi.string().required(),
+  [EnvVariables.client.webClientResetPasswordUrl]: Joi.string().required(),
+  [EnvVariables.client.webClientGoogleAuthCallBack]: Joi.string().required(),
 
   [EnvVariables.smtp.host]: Joi.string().required(),
   [EnvVariables.smtp.port]: Joi.number().required(),
   [EnvVariables.smtp.user]: Joi.string().required(),
   [EnvVariables.smtp.password]: Joi.string().required(),
+
+  [EnvVariables.env]: Joi.string().required(),
 });
 
 export { ValidationSchema, EnvVariables };

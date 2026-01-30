@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider     = "prisma-client-js"
   engineType   = "library"
   moduleFormat = "cjs"
 }
@@ -24,47 +24,35 @@ enum Provider {
   GOOGLE
 }
 
-// -----------------------------------------------------------------------------
-// 1. AUTHENTICATION AND USER MANAGEMENT (RF01-RF06)
-// -----------------------------------------------------------------------------
 
 model User {
-  id            String        @id @default(cuid())
-  name          String
-  email         String        @unique
-  provider      Provider
-  password      String?
-  refreshToken  String?       @db.Text
-  emailVerified DateTime?
-  isActive      Boolean       @default(true)
-  role          Role          @default(USER)
-  createdAt     DateTime      @default(now())
-  deletedAt     DateTime?
-  updatedAt     DateTime      @updatedAt
-  activityLogs  ActivityLog[]
+  id                   String             @id @default(cuid())
+  name                 String
+  email                String             @unique
+  provider             Provider
+  password             String?
+  refreshToken         String?            @db.Text
+  emailVerified        DateTime?
+  isActive             Boolean            @default(true)
+  role                 Role               @default(USER)
+  createdAt            DateTime           @default(now())
+  deletedAt            DateTime?
+  updatedAt            DateTime           @updatedAt
+  activityLogs         ActivityLog[]
 
   @@index([email])
   @@map("users")
 }
 
-model VerificationToken {
+model TokenVerification {
+  id         String   @id @default(cuid())
   identifier String
   token      String   @unique
   expiresAt  DateTime
+  createdAt  DateTime @default(now())
 
   @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  email     String
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@unique([email, token])
-  @@map("password_reset_tokens")
+  @@map("token_verifications")
 }
 
 model ActivityLog {
@@ -72,9 +60,8 @@ model ActivityLog {
   action    LogAction
   metadata  Json?
   createdAt DateTime  @default(now())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("activity_logs")
 }

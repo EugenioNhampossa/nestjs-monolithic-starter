@@ -1,44 +1,36 @@
-# Stage 1: Build Stage
-FROM node:18-alpine AS builder
-
-# Set working directory
+FROM node:22-alpine AS deps
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml ./
 
-# Install all dependencies (including dev dependencies)
-RUN npm install
+RUN pnpm install
 
-# Copy all project files to the build context
+FROM node:22-alpine AS builder
+RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client (after all files are copied)
-RUN npx prisma generate
+ENV DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+RUN pnpm exec prisma generate --schema=src/database/schema.prisma
 
-# Build the application (assuming it's a NestJS app)
-RUN npm run build
+RUN pnpm run build
 
-# Prune dev dependencies to reduce size
-RUN npm prune --production
+RUN pnpm prune --prod
 
-# Stage 2: Production Stage
-FROM node:18-alpine
-
-# Set working directory
+FROM node:22-alpine AS runner
 WORKDIR /app
 
-# Copy built files from the build stage
+ENV NODE_ENV=production
+
 COPY --from=builder /app/dist ./dist
-
-# Copy production node_modules from the build stage
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
 
-# Copy necessary project files (like package.json, .env, etc.)
-COPY --from=builder /app/package*.json ./
+EXPOSE 4000
 
-# Expose the port the app runs on
-EXPOSE 8080
+USER node
 
-# Start the NestJS application
 CMD ["node", "dist/src/main.js"]

@@ -9,9 +9,9 @@ declare namespace NodeJS {
     POSTGRES_HOST: string;
     POSTGRES_PORT: number;
     DATABASE_URL: string;
-    ACCESS_TOKEN_EXPIRES_IN: string;
+    ACCESS_TOKEN_EXPIRES_IN: number;
+    REFRESH_TOKEN_EXPIRES_IN: number;
     JWT_SECRET: string;
-    REFRESH_TOKEN_EXPIRES_IN: string;
     JWT_REFRESH_SECRET: string;
     TOKEN_TYPE: string;
     ADMIN_EMAIL: string;
@@ -19,10 +19,14 @@ declare namespace NodeJS {
     GOOGLE_CLIENT_ID: string;
     GOOGLE_CLIENT_SECRET: string;
     GOOGLE_CALLBACK_URL: string;
+    WEB_CLIENT_GOOGLEAUTH_CALLBACK: string;
+    WEB_CLIENT_EMAIL_VERIFICATION_URL: string;
+    WEB_CLIENT_RESET_PASSWORD_URL: string;
     WEB_CLIENT: string;
     SMTP_HOST: string;
     SMTP_PORT: string;
     SMTP_USER: string;
     SMTP_PASSWORD: string;
+    NODE_ENV: string;
   }
 }

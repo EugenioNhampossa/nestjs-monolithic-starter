@@ -7,8 +7,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import { Prisma } from '@prisma/client';
 import { IErrorResponse } from '../interfaces';
-import { PrismaClientKnownRequestError, PrismaClientValidationError } from '@prisma/client/runtime/client';
+import { DomainException } from '.';
+import { AppErrorCode } from '../enums';
 
 const DEFAULT_ERROR_MESSAGE =
   'An unexpected server error occurred. Please try again later.';
@@ -24,11 +26,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const request = ctx.getRequest();
 
-    const { httpStatus, message } = this.getErrorStatusAndMessage(exception);
+    const { httpStatus, message, errorCode } = this.getErrorDetails(exception);
 
     const errorResponse: IErrorResponse = {
       statusCode: httpStatus,
       message,
+      errorCode,
       error: HttpStatus[httpStatus],
       path: httpAdapter.getRequestUrl(request),
       timestamp: new Date().toISOString(),
@@ -39,68 +42,75 @@ export class HttpExceptionFilter implements ExceptionFilter {
     httpAdapter.reply(ctx.getResponse(), errorResponse, httpStatus);
   }
 
-  private getErrorStatusAndMessage(exception: unknown): {
+  private getErrorDetails(exception: unknown): {
     httpStatus: HttpStatus;
     message: string | string[];
+    errorCode?: AppErrorCode;
   } {
-    if (exception instanceof HttpException) {
+    if (exception instanceof DomainException) {
       return {
-        httpStatus: exception.getStatus(),
-        message: this.formatHttpExceptionMessage(exception.getResponse()),
+        httpStatus: exception.status,
+        message: [exception.message],
+        errorCode: exception.code,
       };
     }
 
-    if (exception instanceof PrismaClientKnownRequestError) {
+    if (exception instanceof HttpException) {
+      const response = exception.getResponse();
+      const status = exception.getStatus();
+
+      return {
+        httpStatus: status,
+        message: this.formatHttpExceptionMessage(response),
+      };
+    }
+
+    if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       return this.handlePrismaKnownError(exception);
     }
 
-    if (exception instanceof PrismaClientValidationError) {
-      this.logger.error('Prisma Validation Error:', (exception as Error).stack);
+    if (exception instanceof Prisma.PrismaClientValidationError) {
       return {
         httpStatus: HttpStatus.UNPROCESSABLE_ENTITY,
-        message: 'Input data validation failed.',
+        message: 'Input data validation failed at the database level.',
+        errorCode: AppErrorCode.VALIDATION_ERROR,
       };
     }
 
     return {
       httpStatus: HttpStatus.INTERNAL_SERVER_ERROR,
       message: DEFAULT_ERROR_MESSAGE,
+      errorCode: AppErrorCode.INTERNAL_SERVER_ERROR,
     };
   }
 
-  private handlePrismaKnownError(exception: PrismaClientKnownRequestError): {
+  private handlePrismaKnownError(
+    exception: Prisma.PrismaClientKnownRequestError,
+  ): {
     httpStatus: HttpStatus;
     message: string[];
+    errorCode: AppErrorCode;
   } {
     switch (exception.code) {
       case 'P2002':
         return {
           httpStatus: HttpStatus.CONFLICT,
           message: [
-            `The value provided for the field '${exception.meta?.target}' already exists.`,
-            'Please use a different value.',
+            `The value for field '${exception.meta?.target}' is already in use.`,
           ],
-        };
-      case 'P2003':
-        return {
-          httpStatus: HttpStatus.BAD_REQUEST,
-          message: [
-            `The reference for the field '${exception.meta?.field_name}' is not valid.`,
-            'Please ensure the related record exists.',
-          ],
+          errorCode: AppErrorCode.DB_UNIQUE_CONSTRAINT_VIOLATION,
         };
       case 'P2025':
         return {
           httpStatus: HttpStatus.NOT_FOUND,
-          message: [
-            'The record you are trying to operate on was not found.',
-            (exception.meta?.cause as string) || 'Resource not found.',
-          ],
+          message: ['The requested record was not found.'],
+          errorCode: AppErrorCode.DB_RECORD_NOT_FOUND,
         };
       default:
         return {
           httpStatus: HttpStatus.INTERNAL_SERVER_ERROR,
           message: [DEFAULT_ERROR_MESSAGE],
+          errorCode: AppErrorCode.INTERNAL_SERVER_ERROR,
         };
     }
   }
@@ -108,9 +118,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
   private formatHttpExceptionMessage(
     response: string | object,
   ): string | string[] {
-    if (typeof response === 'string') {
-      return [response];
-    }
+    if (typeof response === 'string') return [response];
     if (
       typeof response === 'object' &&
       response !== null &&
@@ -124,22 +132,33 @@ export class HttpExceptionFilter implements ExceptionFilter {
   }
 
   private logError(exception: unknown, request: any): void {
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    let status: HttpStatus;
+    let message: string | string[] | undefined;
 
-    const errorLog = {
+    if (exception instanceof DomainException) {
+      status = exception.status;
+      message = exception.message;
+    } else if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      const response = exception.getResponse();
+      message = this.formatHttpExceptionMessage(response);
+    } else {
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+      message = (exception as Error).message;
+    }
+
+    const errorLog: any = {
       statusCode: status,
       method: request.method,
       url: request.url,
-      stack: (exception as Error).stack,
+      message,
     };
 
     if (status >= 500) {
-      this.logger.error('Server Error:', errorLog);
+      errorLog.stack = (exception as Error).stack;
+      this.logger.error(errorLog);
     } else {
-      this.logger.warn('Client Error:', errorLog);
+      this.logger.warn(errorLog);
     }
   }
 }

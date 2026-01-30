@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsString } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { AppErrorCode } from '../enums';
 
 export class IErrorResponse {
   @ApiProperty()
@@ -10,6 +10,9 @@ export class IErrorResponse {
 
   @ApiProperty()
   error: string;
+
+  @ApiProperty({ required: false, enum: AppErrorCode })
+  errorCode?: AppErrorCode;
 
   @ApiProperty()
   path: string;

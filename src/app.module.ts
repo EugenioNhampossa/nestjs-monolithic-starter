@@ -8,16 +8,14 @@ import {
 import { CustomPrismaModule } from 'nestjs-prisma';
 import { ResilienceModule } from 'nestjs-resilience';
 import { LoggerMiddleware } from './common/http';
-import { AuthModule } from './modules/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard, RolesGuard } from './modules/auth/guards';
+import { JwtAuthGuard, RolesGuard } from './modules/identity/auth/guards';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
-import { MailerModule } from '@nestjs-modules/mailer';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { UserModule } from './modules/auth/user/user.module';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 import { AppController } from './app.controller';
+import { EmailModule } from './modules/email/email.module';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { IdentityModule } from './modules/identity/identity.module';
 
 @Module({
   imports: [
@@ -29,6 +27,7 @@ import { AppController } from './app.controller';
         transport: {
           host: config.get(EnvVariables.smtp.host),
           port: config.get(EnvVariables.smtp.port),
+          secure: false,
           auth: {
             user: config.get(EnvVariables.smtp.user),
             pass: config.get(EnvVariables.smtp.password),
@@ -47,13 +46,9 @@ import { AppController } from './app.controller';
       isGlobal: true,
       useClass: ExtendedPrismaConfigService,
     }),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'client'),
-      exclude: ['/api{/*path}'],
-    }),
     ResilienceModule.forRoot({}),
-    UserModule,
-    AuthModule,
+    EmailModule,
+    IdentityModule,
   ],
   controllers: [AppController],
   providers: [
@@ -64,13 +59,15 @@ import { AppController } from './app.controller';
 export class AppModule implements NestModule {
   static port: number;
   static prefix: string;
+  static webclient: string;
 
   constructor(private readonly configService: ConfigService) {
     AppModule.port = +this.configService.get(EnvVariables.api.port);
     AppModule.prefix = this.configService.get(EnvVariables.api.prefix);
+    AppModule.webclient = this.configService.get(EnvVariables.client.web);
   }
 
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(LoggerMiddleware).forRoutes('*');
+    consumer.apply(LoggerMiddleware).forRoutes('*path');
   }
 }

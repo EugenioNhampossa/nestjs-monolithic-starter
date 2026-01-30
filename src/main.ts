@@ -1,18 +1,22 @@
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger, RequestMethod } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { SwaggerConfig, HelmetConfig, validationPipeOptions } from './config';
 import { HttpExceptionFilter } from './common/http';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors();
-  app.useGlobalPipes(validationPipeOptions);
-  app.setGlobalPrefix(AppModule.prefix, {
-    exclude: [{ path: '/', method: RequestMethod.GET }],
+  app.enableCors({
+    origin: AppModule.webclient,
+    credentials: true,
   });
+
+  app.setGlobalPrefix(AppModule.prefix);
+  app.useGlobalPipes(validationPipeOptions);
   app.use(HelmetConfig);
+  app.use(cookieParser());
 
   const httpAdapterHost = app.get(HttpAdapterHost);
   app.useGlobalFilters(new HttpExceptionFilter(httpAdapterHost));
